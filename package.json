@@ -17,6 +17,7 @@
   },
   "homepage": "https://gitlab.com/GnaneshKunal/CheckoutLogger#README",
   "dependencies": {
-    "express": "^4.14.1"
+    "express": "^4.14.1",
+    "morgan": "^1.7.0"
   }
 }
