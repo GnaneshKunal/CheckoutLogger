@@ -1,7 +1,7 @@
 {
   "name": "checkout-logger",
   "version": "1.0.0",
-  "description": "",
+  "description": "Checkout-Logger",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,7 +17,9 @@
   },
   "homepage": "https://gitlab.com/GnaneshKunal/CheckoutLogger#README",
   "dependencies": {
+    "bcrypt-nodejs": "0.0.3",
     "express": "^4.14.1",
+    "mongoose": "^4.8.1",
     "morgan": "^1.7.0"
   }
 }
