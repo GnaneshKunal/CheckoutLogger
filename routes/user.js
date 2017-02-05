@@ -1,7 +1,11 @@
 const router = require('express').Router();
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
 const passport = require('passport');
 const passportConfig = require('../services/passport');
 const User = require('../models/user');
+var upload = multer({ dest: '/tmp/'});
 
 router.get('/login', (req, res) => {
     if(req.user) return res.redirect('/');
@@ -74,11 +78,20 @@ router.get('/edit-profile', (req, res, next) => {
     res.render('accounts/edit-profile.ejs', { message: req.flash('success') });
 });
 
-router.post('/edit-profile', (req, res, next) => {
+router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => {
     User.findOne({ _id: req.user._id }, function(err, user) {
         if (err) return next(err);
 
         if (req.body.name) user.profile.name = req.body.name;
+
+        var file;
+        if (req.file) {
+            file = path.dirname(__dirname) + '/public/uploads/pictures/' + req.file.filename ;
+            fs.rename(req.file.path, file, function(err) {
+                if(err) return next(err);
+            });
+        }
+        user.profile.picture = '/uploads/pictures/' + path.basename(file);
         user.save((err) => {
             if (err) return next(err);
 
