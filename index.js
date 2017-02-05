@@ -3,6 +3,8 @@ const http = require('http');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const ejs = require('ejs');
+const ejsMate = require('ejs-mate');
 const config = require('./config');
 
 const User = require('./models/user');
@@ -18,6 +20,12 @@ mongoose.connect('mongodb://' + config.user + ':' + config.password + '@localhos
 app.use(morgan('tiny'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.engine('ejs', ejsMate);
+app.set('view engine', 'ejs');
+
+app.get('/', (req, res) => {
+    res.render('home');
+})
 
 app.post('/create', (req, res, next) => {
     var user = new User();
