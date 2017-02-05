@@ -17,6 +17,7 @@ mongoose.connect('mongodb://' + config.user + ':' + config.password + '@localhos
 });
 
 //Middlewares
+app.use(express.static(__dirname + '/public'));
 app.use(morgan('tiny'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -24,8 +25,11 @@ app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
-    res.render('home');
-})
+    res.render('main/home');
+});
+app.get('/about', (req, res) => {
+    res.render('main/about');
+});
 
 app.post('/create', (req, res, next) => {
     var user = new User();
