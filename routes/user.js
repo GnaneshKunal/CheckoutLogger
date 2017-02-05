@@ -1,5 +1,27 @@
 const router = require('express').Router();
+const passport = require('passport');
+const passportConfig = require('../services/passport');
 const User = require('../models/user');
+
+router.get('/login', (req, res) => {
+    if(req.user) return res.redirect('/');
+    res.render('accounts/login', {
+        message: req.flash('loginMessage')
+    });
+});
+
+router.post('/login', passport.authenticate('local-login', {
+    successRedirect: '/profile',
+    failureRedirect: '/login',
+    failureFlash: true
+}));
+
+router.get('/profile', (req, res, next) => {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+        if (err) { return next(err); }
+        res.render('accounts/profile', { user: user });
+    });
+});
 
 router.get('/signup', (req, res, next) => {
     res.render('accounts/signup', {
