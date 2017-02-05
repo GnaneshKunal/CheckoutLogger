@@ -17,6 +17,7 @@ router.post('/login', passport.authenticate('local-login', {
 }));
 
 router.get('/profile', (req, res, next) => {
+    if(!req.user) return res.redirect('/login');
     User.findOne({ _id: req.user._id }, function(err, user) {
         if (err) { return next(err); }
         res.render('accounts/profile', { user: user });
@@ -24,6 +25,7 @@ router.get('/profile', (req, res, next) => {
 });
 
 router.get('/signup', (req, res, next) => {
+    if(req.user) return res.redirect('/');
     res.render('accounts/signup', {
         errors: req.flash('errors')
     });
@@ -44,6 +46,7 @@ router.post('/signup', (req, res, next) => {
             name
         }
     });
+    user.profile.picture = user.gravatar();
     User.findOne({ email: email }, function(err, existingUser) {
         if (existingUser) {
             req.flash('errors', 'Account with that email address already exists');
@@ -64,6 +67,25 @@ router.post('/signup', (req, res, next) => {
 router.get('/logout', (req, res, next) => {
     req.logout();
     res.redirect('/');
+});
+
+router.get('/edit-profile', (req, res, next) => {
+    if(!req.user) return res.redirect('/');
+    res.render('accounts/edit-profile.ejs', { message: req.flash('success') });
+});
+
+router.post('/edit-profile', (req, res, next) => {
+    User.findOne({ _id: req.user._id }, function(err, user) {
+        if (err) return next(err);
+
+        if (req.body.name) user.profile.name = req.body.name;
+        user.save((err) => {
+            if (err) return next(err);
+
+            req.flash('success', 'Successfully edited your profile');
+            return res.redirect('/edit-profile');
+        });
+    });
 });
 
 module.exports = router;
