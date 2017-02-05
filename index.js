@@ -8,6 +8,8 @@ const ejsMate = require('ejs-mate');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const flash = require('express-flash');
+const MongoStore = require('connect-mongo')(session);
+const passport = require('passport');
 const config = require('./config');
 
 //models
@@ -18,7 +20,7 @@ const app = express();
 const mainRoutes = require('./routes/main');
 const userRoutes = require('./routes/user');
 
-mongoose.connect('mongodb://' + config.user + ':' + config.password + '@localhost:27017' + '/' + config.database, (err) => {
+mongoose.connect(config.databaseUrl, (err) => {
     if (err) throw err;
     else console.log('Connected to database');
 });
@@ -32,9 +34,12 @@ app.use(cookieParser());
 app.use(session({
     resave: true,
     saveUninitialized: true,
-    secret: config.secret
+    secret: config.secret,
+    store: new MongoStore({ url: config.databaseUrl, autoReconnect: true })
 }));
 app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
