@@ -1,3 +1,24 @@
 <% layout('layout') -%>
 
-hello <%= user.profile.name %>
+<body translate="no">
+
+  <div class="card-profile text-center">
+  
+  <div class="card-block">
+    <img alt='<%= user.profile.name %>' class="card-img-profile pro-img img-circle img-responsive img-center" src=<%= user.profile.picture %>>
+    <h4 class="card-title">
+      <%= user.profile.name %>
+    </h4>
+    <div class="card-links">
+      <dl class="row">
+        <dt class="col-sm-3">Name</dt>
+        <dd class="col-sm-9"><%= user.profile.name %></dd>
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9"><%= user.email %></dd>
+      </dl>
+      <button type="button" class="btn btn-outline-secondary">
+        <a href="edit-profile">Edit Profile</a>
+      </button>
+    </div>
+  </div>
+</div>
