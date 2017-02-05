@@ -33,9 +33,9 @@ router.post('/signup', (req, res, next) => {
     const email = req.body.email.toLowerCase();
     const name = req.body.name;
     const password = req.body.password;
-    console.log(req.body);
     if (!email || !name || !password ) {
-
+        req.flash('errors', 'Please fill up the form');
+        return res.redirect('/signup');
     }
     const user = new User({
         email,
@@ -52,7 +52,10 @@ router.post('/signup', (req, res, next) => {
             user.save((err, user) => {
                 if (err) return next(err);
 
-                return res.redirect('/');
+                req.logIn(user, function(err) {
+                    if (err) { return next(err); }
+                    res.redirect('/profile');
+                });
             });
         }
     });
