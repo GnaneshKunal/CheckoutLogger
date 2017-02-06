@@ -8,3 +8,6 @@
     width: 150px !important;
     margin-bottom: 20px;
 }
+.ck-btn {
+    display: inline;
+}
