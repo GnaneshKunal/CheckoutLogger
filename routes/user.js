@@ -75,7 +75,7 @@ router.get('/logout', (req, res, next) => {
 
 router.get('/edit-profile', (req, res, next) => {
     if(!req.user) return res.redirect('/');
-    res.render('accounts/edit-profile.ejs', { message: req.flash('success') });
+    res.render('accounts/edit-profile.ejs', { message: req.flash('success'), error: req.flash('errorPicture') });
 });
 
 router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => {
@@ -84,14 +84,23 @@ router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => 
 
         if (req.body.name) user.profile.name = req.body.name;
 
-        var file;
         if (req.file) {
-            file = path.dirname(__dirname) + '/public/uploads/pictures/' + req.file.filename ;
-            fs.rename(req.file.path, file, function(err) {
-                if(err) return next(err);
-            });
+            var extensions = ['.png', '.jpg', '.gif'];
+            if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
+                var file = path.dirname(__dirname) + '/public/uploads/pictures/' + req.file.filename ;
+                if (fs.existsSync(path.dirname(__dirname) + '/public' + user.profile.picture)) {
+                    fs.unlinkSync(path.dirname(__dirname) + '/public' + user.profile.picture);
+                }
+                
+                fs.renameSync(req.file.path, file);
+                user.profile.picture = '/uploads/pictures/' + path.basename(file);
+                
+            } else {
+                req.flash('errorPicture', 'Sorry we accept only png, jpg and gif formats');
+                return res.redirect('/edit-profile');
+            }
         }
-        user.profile.picture = '/uploads/pictures/' + path.basename(file);
+        
         user.save((err) => {
             if (err) return next(err);
 
