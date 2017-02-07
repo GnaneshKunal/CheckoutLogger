@@ -7,7 +7,7 @@ const CheckoutSchema = new Schema({
 	bill_id: { type: String, unique: true },
 	title: { type: String, lowercase: true },
 	description: { type: String, default: ''},
-	date: { type: Date, default: Date() },
+	date: { type: Date },
 	location: { type: String, default: '' },
 	total_tax: { type: String },
 	bill_picture: { type: String, required: true },
