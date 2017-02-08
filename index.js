@@ -19,6 +19,7 @@ const User = require('./models/user');
 const app = express();
 const mainRoutes = require('./routes/main');
 const userRoutes = require('./routes/user');
+const checkoutRoutes = require('./routes/checkout');
 
 mongoose.connect(config.databaseUrl, (err) => {
     if (err) throw err;
@@ -50,6 +51,7 @@ app.set('view engine', 'ejs');
 
 app.use(mainRoutes);
 app.use(userRoutes);
+app.use(checkoutRoutes);
 
 const PORT = process.env.PORT || 8080;
 const server = http.createServer(app);
