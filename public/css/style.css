@@ -11,3 +11,6 @@
 .ck-btn {
     display: inline;
 }
+.capitalize {
+    text-transform: capitalize;
+}
