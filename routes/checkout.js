@@ -1,16 +1,30 @@
 const router = require('express').Router();
 const fs = require('fs');
+const mongoose = require('mongoose');
 const Checkout = require('../models/checkout');
 
-router.get('/checkout', (req, res) => {
+router.get('/checkout', (req, res, next) => {
     if (!req.user) return res.redirect('/');
-    Checkout.findOne().sort({ date: -1}).exec((err, checkout) => {
+    Checkout.findOne({ bill_owner: req.user._id }).sort({ date: -1}).exec((err, checkout) => {
         if (err) { return next(err); }
         if (!checkout) { 
             return res.render('checkouts/checkout', { checkout: [] });
         }
-        console.log(checkout);
         return res.render('checkouts/checkout', { checkout });
+    });
+});
+
+router.get('/checkout/:_id', (req, res, next) => {
+    let _id = req.params._id
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+        return res.render('main/error404', { status: false, _id });
+    }
+    if (!req.user) return res.redirect('/');
+    Checkout.findOne({ _id }, (err, checkout) => {
+        if (err) return next(err);
+        if (!checkout)
+            return res.render('main/error404', { status: false, _id });
+        return res.render('checkouts/checkout-self', { status: true, checkout });
     });
 });
 
