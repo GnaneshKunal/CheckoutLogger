@@ -11,7 +11,8 @@ const CheckoutSchema = new Schema({
 	location: { type: String, default: '' },
 	total_tax: { type: String },
 	bill_picture: { type: String, required: true },
-	bill_owner: { type: Schema.Types.ObjectId, ref: "User" }
+	bill_owner: { type: Schema.Types.ObjectId, ref: "User" },
+	total: { type: String }
 });
 
 module.exports = mongoose.model('Checkout', CheckoutSchema);
