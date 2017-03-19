@@ -1,0 +1,14 @@
+*.* filter=git-crypt diff=git-crypt
+.gitattributes !filter !diff
+
+*.js text
+*.css text
+*.ejs text
+*.html text
+*.json text
+
+*.png binary
+*.jpg binary
+*.gif binary
+
+* text=auto
