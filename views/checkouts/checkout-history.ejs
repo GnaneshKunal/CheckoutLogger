@@ -2,9 +2,16 @@
 <% if (checkouts.length === 0) { %>
     <h2>Empty</h2>
 <% } else { %>
-
-<div class="row">
-
+<div class="list-group">
+    <% for(var i = 0; i < checkouts.length; i++) {%>
+        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1 capitalize"><%= checkouts[i].title %></h5>
+            <small><%= checkouts[i].date %></small>
+            </div>
+            <p class="mb-1"><%= checkouts[i].bill_id %></p>
+            <small>$<%= checkouts[i].total %></small>
+        </a>
+    <% } %>
 </div>
-
 <% } %>
