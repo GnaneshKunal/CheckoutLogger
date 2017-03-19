@@ -3,7 +3,15 @@ const fs = require('fs');
 const Checkout = require('../models/checkout');
 
 router.get('/checkout', (req, res) => {
-    res.render('checkouts/checkout');
+    if (!req.user) return res.redirect('/');
+    Checkout.findOne().sort({ date: -1}).exec((err, checkout) => {
+        if (err) { return next(err); }
+        if (!checkout) { 
+            return res.render('checkouts/checkout', { checkout: [] });
+        }
+        console.log(checkout);
+        return res.render('checkouts/checkout', { checkout });
+    });
 });
 
 module.exports = router;
@@ -15,13 +23,15 @@ router.get('/checkout-new', (req, res, next) => {
 
 router.get('/checkout-history', (req, res, next) => {
     if (!req.user) return res.redirect('/');
-    Checkout.find({ bill_owner: req.user._id }, (err, checkouts) => {
-        if (err) { return next(err); }
-        if (!checkouts) { 
-            return res.render('checkouts/checkout-history', { checkouts: [] });
-        }
-        return res.render('checkouts/checkout-history', { checkouts: checkouts });
-    });
+    Checkout.find({ bill_owner: req.user._id })
+        .populate('bill_owner', 'profile.name')
+        .exec((err, checkouts) => {
+            if (err) { return next(err); }
+            if (!checkouts) { 
+                return res.render('checkouts/checkout-history', { checkouts: [] });
+            }
+            return res.render('checkouts/checkout-history', { checkouts });
+        });
 });
 
 router.post('/api/checkout', (req, res, next) => {
