@@ -1,10 +1,12 @@
 <% layout('layout') -%>
 <% if (checkouts.length === 0) { %>
-    <h2>Empty</h2>
+    <div class="row">
+        <p>You don't have any checkouts yet</p>
+    </div>
 <% } else { %>
 <div class="list-group">
     <% for(var i = 0; i < checkouts.length; i++) {%>
-        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+        <a href="/checkout/<%= checkouts[i]._id %>" id="<%= checkouts[i]._id %>" class="list-group-item list-group-item-action flex-column align-items-start">
             <div class="d-flex w-100 justify-content-between">
             <h5 class="mb-1 capitalize"><%= checkouts[i].title %></h5>
             <small><%= checkouts[i].date %></small>
