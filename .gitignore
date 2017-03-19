@@ -3,3 +3,4 @@ config.js
 .vscode/
 public/uploads/pictures/
 .yarnclean
+npm-debug.log
