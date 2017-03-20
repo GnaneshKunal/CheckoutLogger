@@ -14,3 +14,7 @@
 .capitalize {
     text-transform: capitalize;
 }
+.bill-self {
+    height: inherit;
+    width: inherit;
+}
