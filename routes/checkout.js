@@ -3,6 +3,25 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const Checkout = require('../models/checkout');
 
+function paginate(req, res, next) {
+    let perPage = 5;
+    let page = req.params.page - 1;
+    Checkout.find({ bill_owner: req.user._id })
+        .skip(perPage * page)
+        .limit(perPage)
+        .populate('bill_owner', 'profile.name')
+        .exec((err, checkouts) => {
+            if (err) return next(err);
+            Checkout.count().exec((err, count) => {
+                console.log(count);
+                if (err) return next(err);
+                if (!checkouts)
+                    return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage });
+                return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage });
+            });
+    });
+}
+
 router.get('/checkout', (req, res, next) => {
     if (!req.user) return res.redirect('/');
     Checkout.findOne({ bill_owner: req.user._id }).sort({ date: -1}).exec((err, checkout) => {
@@ -37,15 +56,12 @@ router.get('/checkout-new', (req, res, next) => {
 
 router.get('/checkout-history', (req, res, next) => {
     if (!req.user) return res.redirect('/');
-    Checkout.find({ bill_owner: req.user._id })
-        .populate('bill_owner', 'profile.name')
-        .exec((err, checkouts) => {
-            if (err) { return next(err); }
-            if (!checkouts) { 
-                return res.render('checkouts/checkout-history', { checkouts: [] });
-            }
-            return res.render('checkouts/checkout-history', { checkouts });
-        });
+    paginate(req, res, next);
+});
+
+router.get('/checkout-history/:page', (req, res, next) => {
+    if (!req.user) return res.redirect('/');
+    paginate(req, res, next);
 });
 
 router.post('/api/checkout', (req, res, next) => {

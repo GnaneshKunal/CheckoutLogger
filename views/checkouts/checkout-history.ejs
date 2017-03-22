@@ -17,3 +17,15 @@
     <% } %>
 </div>
 <% } %>
+
+<nav aria-label="Page navigation example">
+  <ul class="pagination justify-content-center">
+    <% for(var i = 1; i <= pages+1; i++) {%>
+            <% if (i === 1) {%>
+    <li class="page-item"><a class="page-link" href="/checkout-history"><%= i %></a></li>
+            <% } else { %>
+    <li class="page-item"><a class="page-link" href="/checkout-history/<%= i %>"><%= i %></a></li>
+            <% } %>
+    <% } %>
+  </ul>
+</nav>
