@@ -2,6 +2,7 @@ node_modules/
 config.js
 .vscode/
 public/uploads/pictures/
+public/uploads/checkouts/
 .yarnclean
 npm-debug.log
 yarn-error.log
