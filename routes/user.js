@@ -91,8 +91,12 @@ router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => 
                 if (fs.existsSync(path.dirname(__dirname) + '/public' + user.profile.picture)) {
                     fs.unlinkSync(path.dirname(__dirname) + '/public' + user.profile.picture);
                 }
-                
-                fs.renameSync(req.file.path, file);
+                let is = fs.createReadStream(req.file.path);
+                let ds = fs.createWriteStream(file);
+                is.pipe(ds);
+                is.on('end', () => {
+                    fs.unlinkSync(req.file.path);
+                });
                 user.profile.picture = '/uploads/pictures/' + path.basename(file);
                 
             } else {
