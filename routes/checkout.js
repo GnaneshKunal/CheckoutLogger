@@ -188,7 +188,19 @@ router.get('/checkout-delete/:id',(req, res, next) => {
     Checkout.findByIdAndRemove({ _id }, (err, checkout) => {
         if (err)
             return res.next(err);
+        if (fs.existsSync(path.join(path.dirname(__dirname), 'public', checkout.bill_picture)))
+            fs.unlinkSync(path.join(path.dirname(__dirname), 'public', checkout.bill_picture));
         req.flash('success', 'Successfully deleted');
         return res.redirect('/checkout-history');
     });
 });
+
+/*if (fs.existsSync(path.dirname(__dirname) + '/public' + user.profile.picture)) {
+                    fs.unlinkSync(path.dirname(__dirname) + '/public' + user.profile.picture);
+                }
+                let is = fs.createReadStream(req.file.path);
+                let ds = fs.createWriteStream(file);
+                is.pipe(ds);
+                is.on('end', () => {
+                    fs.unlinkSync(req.file.path);
+                });*/
