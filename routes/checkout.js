@@ -3,6 +3,7 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
+const moment = require('moment');
 const Checkout = require('../models/checkout');
 const parser = require('../lib/parser');
 let upload = multer({dest: '/tmp/' });
@@ -56,7 +57,7 @@ module.exports = router;
 
 router.get('/checkout-new', (req, res, next) => {
     if (!req.user) return res.redirect('/');
-    return res.render('checkouts/checkout-new');
+    return res.render('checkouts/checkout-new', { error: req.flash('errorPicture') });
 });
 
 router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
@@ -65,7 +66,6 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
     if (req.file) {
         let extensions = ['.png', '.jpg'];
         if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
-            console.log(req.file);
             let file = path.join(path.dirname(__dirname), 'public/uploads/checkouts', req.file.filename);
             //vision(req.file, config,(err, text) => {
                 let detectedText = exampleJSON.textAnnotations[0].description;
@@ -76,7 +76,7 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                 let date = parser.parseDate(textArray);
                 let location = "chittoor";
                 let description = "Checkout";
-                let bill_picture = path.join('upload/checkouts', req.file.filename);
+                let bill_picture = path.join('/uploads/checkouts', req.file.filename);
                 var checkout = new Checkout({
                     bill_id: req.file.filename,
                     title,
@@ -88,13 +88,25 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                     bill_picture,
                     bill_owner: req.user._id
                 });
-                checkout.save((err) => {
-                    if (err) return next(err);
-                    fs.renameSync(req.file.path, file);
-                    return res.redirect('/checkout/' + checkout._id);
+         //}
+            checkout.save((err) => {
+                if (err) return next(err);
+                let is = fs.createReadStream(req.file.path);
+                let ds = fs.createWriteStream(file);
+                is.pipe(ds);
+                is.on('end', () => {
+                    fs.unlinkSync(req.file.path);
                 });
+                return res.redirect('/checkout/' + checkout._id);
+            });
+        } else {
+                req.flash('errorPicture', 'Sorry we accept only png and jpg formats');
+                return res.redirect('/checkout-new');
         }
-    } 
+    } else {
+        req.flash('errorPicture', 'Please upload an Image');
+        return res.redirect('/checkout-new');
+    }
 });
 
 router.get('/checkout-history', (req, res, next) => {
@@ -105,4 +117,64 @@ router.get('/checkout-history', (req, res, next) => {
 router.get('/checkout-history/:page', (req, res, next) => {
     if (!req.user) return res.redirect('/');
     paginate(req, res, next);
+});
+
+router.get('/checkout-edit/:id', (req, res, next) => {
+    if (!req.user)
+        return res.redirect('/');
+    let _id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+        return res.render('main/error404', { status: false, _id });
+    }
+    Checkout.findById({ _id }, (err, checkout) => {
+        if (err)
+            return next(err);
+        if (!checkout)
+            return res.render('main/error404', { status: false, _id });
+        let date = moment(checkout.date).format('YYYY-MM-DDTHH:mm:ss');
+        return res.render('checkouts/checkout-edit', { checkout, date, error: req.flash('errorCheckout'), success: req.flash('success') });
+    });
+});
+
+router.post('/checkout-edit/:id', (req, res, next) => {
+    if (!req.user)
+        return res.redirect('/');
+    let _id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(_id))
+        return res.render('main/error404', { status: false, _id });
+        Checkout.findById({ _id }, (err, checkout) => {
+            if (err)
+                return next(err);
+            if (!checkout)
+                return res.render('main/error404', { status: false, _id });
+            if (req.body.title)
+                checkout.title = req.body.title;
+            checkout.description = req.body.description ? req.body.description : checkout.description;
+            if (req.body.date_time) {
+                if (!moment(req.body.date_time).isValid){
+                    req.flash('errorCheckout', 'Not a Valid date format');
+                    return res.redirect('/checkout-edit/' + checkout._id);
+                }
+                checkout.date = req.body.date_time;
+            }
+            if (req.body.tax) {
+                let tax = Number.parseFloat(req.body.tax);
+                if (!Number.isNaN(tax) && tax > 0)
+                    checkout.total_tax = tax;
+            }
+            if (req.body.total) {
+                let total = Number.parseFloat(req.body.total);
+                if (!Number.isNaN(total) && total > 0)
+                    checkout.total = total;
+            }
+            if (req.body.location)
+                checkout.location = req.body.location;
+            
+            checkout.save((err) => {
+                if (err) return next(err);
+
+                req.flash('success', 'Successfully edited your checkout');
+                return res.redirect('/checkout-edit/' + checkout._id);
+            });
+        });
 });
