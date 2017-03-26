@@ -49,10 +49,11 @@
             <% } %>
             </table>
             <div class="text-center">
-                <img class="bill-self" src="/uploads/pictures/star.jpg" class="rounded" alt="...">
+                <img class="bill-self" src="<%= checkout.bill_picture %>" class="rounded" alt="...">
             </div>
             <p class="lead">
                 <p class="ck-btn"><a class="btn btn-success" href="/checkout-history#<%= checkout._id %>" role="button">Go Back</a></p>
+                <p class="ck-btn"><a class="btn btn-secondary" href="/checkout-edit/<%= checkout._id %>" role="button">Edit Checkout</a></p>
             </p>
            </div>
 
