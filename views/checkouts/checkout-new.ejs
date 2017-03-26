@@ -12,6 +12,13 @@
                     </div>
                 </div>
             </div>
+            <% if (error.length > 0) { %>
+            <div class="form-group row">
+                <div id="error" class="alert alert-danger col-sm-10" role="alert">
+                    <strong>Oh snap!</strong> <%= error %>
+                </div>
+            </div>
+            <% } %>
             <p class="lead">
                 <button type="submit" class="btn btn-primary">upload</button>
             </p>
