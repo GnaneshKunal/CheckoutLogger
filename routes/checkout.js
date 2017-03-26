@@ -22,8 +22,8 @@ function paginate(req, res, next) {
             Checkout.count().exec((err, count) => {
                 if (err) return next(err);
                 if (!checkouts)
-                    return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage });
-                return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage });
+                    return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success') });
+                return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success') });
             });
     });
 }
@@ -49,7 +49,7 @@ router.get('/checkout/:_id', (req, res, next) => {
         if (err) return next(err);
         if (!checkout)
             return res.render('main/error404', { status: false, _id });
-        return res.render('checkouts/checkout-self', { status: true, checkout });
+        return res.render('checkouts/checkout-self', { status: true, checkout, success: req.flash('success') });
     });
 });
 
@@ -174,7 +174,21 @@ router.post('/checkout-edit/:id', (req, res, next) => {
                 if (err) return next(err);
 
                 req.flash('success', 'Successfully edited your checkout');
-                return res.redirect('/checkout-edit/' + checkout._id);
+                return res.redirect('/checkout/' + checkout._id);
             });
         });
+});
+
+router.get('/checkout-delete/:id',(req, res, next) => {
+    if (!req.user)
+        return res.redirect('/');
+    let _id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(_id))
+        return res.render('main/error404', { status: false, _id });
+    Checkout.findByIdAndRemove({ _id }, (err, checkout) => {
+        if (err)
+            return res.next(err);
+        req.flash('success', 'Successfully deleted');
+        return res.redirect('/checkout-history');
+    });
 });
