@@ -194,13 +194,3 @@ router.get('/checkout-delete/:id',(req, res, next) => {
         return res.redirect('/checkout-history');
     });
 });
-
-/*if (fs.existsSync(path.dirname(__dirname) + '/public' + user.profile.picture)) {
-                    fs.unlinkSync(path.dirname(__dirname) + '/public' + user.profile.picture);
-                }
-                let is = fs.createReadStream(req.file.path);
-                let ds = fs.createWriteStream(file);
-                is.pipe(ds);
-                is.on('end', () => {
-                    fs.unlinkSync(req.file.path);
-                });*/
