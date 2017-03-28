@@ -12,6 +12,9 @@
     "url": "git+ssh://git@gitlab.com/GnaneshKunal/CheckoutLogger.git"
   },
   "author": "gnanesh",
+  "engines": {
+    "node": ">=6.10.1"
+  },
   "license": "ISC",
   "bugs": {
     "url": "https://gitlab.com/GnaneshKunal/CheckoutLogger/issues"
