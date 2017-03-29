@@ -36,7 +36,13 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     secret: config.secret,
-    store: new MongoStore({ url: config.databaseUrl, autoReconnect: true })
+    store: new MongoStore({ 
+                url: config.databaseUrl, autoReconnect: true,
+                autoRemove: 'native',
+                autoRemoveInterval: 10,
+                ttl: 14 * 24 * 60 * 60,
+                touchAfter: 24 * 3600
+            })
 }));
 app.use(flash());
 app.use(passport.initialize());
