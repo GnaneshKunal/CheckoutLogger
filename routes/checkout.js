@@ -4,7 +4,10 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const moment = require('moment');
+const request = require('request');
+const gcloud = require('google-cloud');
 const Checkout = require('../models/checkout');
+const gcloudConfig = require('../gcloud/gcloud.config');
 const parser = require('../lib/parser');
 let upload = multer({dest: '/tmp/' });
 let exampleJSON = require('../lib/examples/star.json');
@@ -193,4 +196,21 @@ router.get('/checkout-delete/:id',(req, res, next) => {
         req.flash('success', 'Successfully deleted');
         return res.redirect('/checkout-history');
     });
+});
+
+
+router.get('/upload', (req, res, next) => {
+    if (!req.user)
+        return res.redirect('/');
+        return res.render('checkouts/upload', {error: req.flash('errorBucket')});
+});
+
+router.post('/upload', upload.single('checkout'), (req, res, next) => {
+    var Storage = gcloud.storage;
+    var gcs = Storage({
+        projectId: gcloudConfig.projectId,
+        keyFileName: gcloudConfig.keyFileName
+    });
+    
+    return res.json(req.file);
 });
