@@ -10,7 +10,6 @@ const Checkout = require('../models/checkout');
 const config = require('../config');
 const parser = require('../lib/parser');
 let upload = multer({dest: '/tmp/' });
-let exampleJSON = require('../lib/examples/star.json');
 var storage = gcloud.storage({
     projectId: config.gcloud.projectId,
     keyFilename: config.gcloud.keyFileName
