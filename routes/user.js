@@ -14,8 +14,8 @@ var storage = gcloud.storage({
     projectId: config.gcloud.projectId,
     keyFilename: config.gcloud.keyFileName
 });
-
 var userImages = storage.bucket(config.buckets.user);
+
 function sendForgotPassword(forgotPass, next) {
     let transporter = nodemailer.createTransport({
         service: config.smtp.service,
