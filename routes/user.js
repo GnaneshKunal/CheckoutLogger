@@ -5,11 +5,17 @@ const path = require('path');
 const passport = require('passport');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const gcloud = require('google-cloud');
 const config = require('../config');
 const passportConfig = require('../services/passport');
 const User = require('../models/user');
 var upload = multer({ dest: '/tmp/'});
+var storage = gcloud.storage({
+    projectId: config.gcloud.projectId,
+    keyFilename: config.gcloud.keyFileName
+});
 
+var userImages = storage.bucket(config.buckets.user);
 function sendForgotPassword(forgotPass, next) {
     let transporter = nodemailer.createTransport({
         service: config.smtp.service,
@@ -127,18 +133,22 @@ router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => 
         if (req.file) {
             var extensions = ['.png', '.jpg', '.gif'];
             if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
-                var file = path.dirname(__dirname) + '/public/uploads/pictures/' + req.file.filename ;
-                if (fs.existsSync(path.dirname(__dirname) + '/public' + user.profile.picture)) {
-                    fs.unlinkSync(path.dirname(__dirname) + '/public' + user.profile.picture);
-                }
-                let is = fs.createReadStream(req.file.path);
-                let ds = fs.createWriteStream(file);
-                is.pipe(ds);
-                is.on('end', () => {
-                    fs.unlinkSync(req.file.path);
+                var oldFile = userImages.file(path.basename(user.profile.picture));
+                if (oldFile.exists((err, exists) => {
+                    if (err)
+                        return next(err);
+                    if (exists) {
+                        oldFile.delete((err, deleted) => {
+                            if (err)
+                                return next(err);
+                        });
+                    }
+                }));
+                userImages.upload(req.file.path, (err, file) => {
+                    if (err)
+                        return next(err);
                 });
-                user.profile.picture = '/uploads/pictures/' + path.basename(file);
-                
+                user.profile.picture = 'https://storage.googleapis.com/' + config.buckets.user + '/' + req.file.filename;
             } else {
                 req.flash('errorPicture', 'Sorry we accept only png, jpg and gif formats');
                 return res.redirect('/edit-profile');
@@ -149,7 +159,9 @@ router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => 
             if (err) return next(err);
 
             req.flash('success', 'Successfully edited your profile');
-            return res.redirect('/edit-profile');
+            setTimeout(function() {
+                return res.redirect('/edit-profile');
+            }, 110);
         });
     });
 });
