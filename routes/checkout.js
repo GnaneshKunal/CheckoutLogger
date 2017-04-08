@@ -7,10 +7,15 @@ const moment = require('moment');
 const request = require('request');
 const gcloud = require('google-cloud');
 const Checkout = require('../models/checkout');
-const gcloudConfig = require('../gcloud/gcloud.config');
+const config = require('../config');
 const parser = require('../lib/parser');
 let upload = multer({dest: '/tmp/' });
 let exampleJSON = require('../lib/examples/star.json');
+var storage = gcloud.storage({
+    projectId: config.gcloud.projectId,
+    keyFilename: config.gcloud.keyFileName
+});
+var checkouts = storage.bucket(config.buckets.checkout);
 
 function paginate(req, res, next) {
     let perPage = 5;
