@@ -197,20 +197,3 @@ router.get('/checkout-delete/:id',(req, res, next) => {
         return res.redirect('/checkout-history');
     });
 });
-
-
-router.get('/upload', (req, res, next) => {
-    if (!req.user)
-        return res.redirect('/');
-        return res.render('checkouts/upload', {error: req.flash('errorBucket')});
-});
-
-router.post('/upload', upload.single('checkout'), (req, res, next) => {
-    var Storage = gcloud.storage;
-    var gcs = Storage({
-        projectId: gcloudConfig.projectId,
-        keyFileName: gcloudConfig.keyFileName
-    });
-    
-    return res.json(req.file);
-});
