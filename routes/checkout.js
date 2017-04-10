@@ -78,13 +78,18 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
         let extensions = ['.png', '.jpg'];
         if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
             vision.detectText(req.file.path, (err, textD) => {
-                if (textD.length !== 0 || textD[0].length !== 0) {
+                if (textD.length !== 0 || textD === undefined) {
                     let detectedText = textD[0];
                     let textArray = detectedText.split('\n');
                     let title = textArray[0];
-                    let total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
-                    let total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
-                    let date = parser.parseDate(textArray);
+                    try {
+                        let total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
+                        let total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
+                        let date = parser.parseDate(textArray);
+                    } catch(e) {
+                        req.flash('errorPicture', "Sorry, There's some error in decoding the text. Try to upload a clear Image");
+                        return res.redirect('/checkout-new');
+                    }
                     let location = "chittoor";
                     let description = "Checkout";
                     let bill_picture = 'https://storage.googleapis.com/' + config.buckets.checkout + '/' + req.file.filename;
