@@ -31,13 +31,13 @@
                   <div class="form-group row">
                     <label for="tax" class="col-2 col-form-label">Tax:</label>
                     <div class="col-10">
-                      <input class="form-control" type="number" name="tax" step="0.01" value="<%= checkout.total_tax %>" id="tax">
+                      <input class="form-control" type="number" name="tax" step="0.01" min="0.01" value="<%= checkout.total_tax %>" id="tax">
                     </div>
                   </div>
                   <div class="form-group row">
                     <label for="total" class="col-2 col-form-label">Total:</label>
                     <div class="col-10">
-                      <input class="form-control" type="number" name="total" step="0.01" value="<%= checkout.total %>" id="total">
+                      <input class="form-control" type="number" name="total" step="0.01" min="0.01" value="<%= checkout.total %>" id="total">
                     </div>
                   </div>
                   <div class="form-group row">
