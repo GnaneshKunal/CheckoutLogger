@@ -3,7 +3,6 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const passport = require('passport');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const gcloud = require('google-cloud');
 const config = require('../config');
@@ -31,10 +30,10 @@ function sendForgotPassword(forgotPass, next) {
         
 As per your request, here is the link you can use to reset your password:
 
-    http://${forgotPass.host}{forgotPass.link}`,
+    ${forgotPass.protocol}://${forgotPass.host}${forgotPass.link}`,
     "Html-part": `<p>Dear ${forgotPass.email}.</p><br />
         <p>As per your request, here is the link you can use to reset your password:<br />
-        http://${forgotPass.host}${forgotPass.link}</p><br /><br />
+        <a href="${forgotPass.protocol}://${forgotPass.host}${forgotPass.link}">here</a></p><br /><br />
         <p>Best regards,</p>
         <p>The CLTeam</p>`
 };
@@ -44,7 +43,7 @@ let request = Mailjet.post('send').request(options)
         console.log(data);
     })
     .catch((data) => {
-        console.log(data);
+        next(data);
     });
 }
 
@@ -167,8 +166,6 @@ router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => 
 });
 
 router.get('/forgot-password', (req, res, next) => {
-    console.log(req.url);
-    console.log(req.get('host'));
     return res.render('accounts/forgot-password', { message: req.flash('errorMessage'), status: false });
 });
 
@@ -188,7 +185,8 @@ router.post('/forgot-password', (req, res, next) => {
         let hash = user.forgotPassword;
         let link = '/forgot-password/' + hash;
         let host = req.get('host');
-        sendForgotPassword({ email: user.email, link, host }, next);
+        let protocol = req.protocol;
+        sendForgotPassword({ email: user.email, link, host, protocol }, next);
         return res.render('accounts/forgot-password', { message: req.flash('errorMessage'), status: true });
     });
 });

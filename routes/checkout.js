@@ -82,10 +82,11 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                     let detectedText = textD[0];
                     let textArray = detectedText.split('\n');
                     let title = textArray[0];
+                    let total, total_tax, date;
                     try {
-                        let total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
-                        let total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
-                        let date = parser.parseDate(textArray);
+                        total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
+                        total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
+                        date = parser.parseDate(textArray);
                     } catch(e) {
                         req.flash('errorPicture', "Sorry, There's some error in decoding the text. Try to upload a clear Image");
                         return res.redirect('/checkout-new');
@@ -208,6 +209,9 @@ router.get('/checkout-delete/:id',(req, res, next) => {
     Checkout.findByIdAndRemove({ _id }, (err, checkout) => {
         if (err)
             return res.next(err);
+        if (!checkout)
+            return res.render('main/error404', { status: false, _id });
+            
         let file = checkoutBucket.file(path.basename(checkout.bill_picture));
         file.exists((err, exists) => {
             if (err)
