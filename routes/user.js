@@ -14,37 +14,37 @@ var storage = gcloud.storage({
     projectId: config.gcloud.projectId,
     keyFilename: config.gcloud.keyFileName
 });
+const Mailjet = require('node-mailjet').connect(
+    config.mailjet.apiKey,
+    config.mailjet.apiSecret
+);
+
 var userImages = storage.bucket(config.buckets.user);
 
 function sendForgotPassword(forgotPass, next) {
-    let transporter = nodemailer.createTransport({
-        service: config.smtp.service,
-        auth: {
-            user: config.smtp.email,
-            pass: config.smtp.password
-        }
-    });
-
-    let mailOptions = {
-        from: `"${config.smtp.name + config.smtp.last}" <${config.smtp.email}>`,
-        to: forgotPass.email,
-        subject: 'CheckoutLogger - forgot password',
-        text: `Dear ${forgotPass.email},
+    let options = {
+    FromEmail: config.mailjet.sender,
+    FromName: "Checkout Logger Name",
+    Recipients: [ { Email: forgotPass.email }],
+    Subject: "CheckoutLogger - forgot password",
+    "Text-part": `Dear ${forgotPass.email},
         
 As per your request, here is the link you can use to reset your password:
 
-    http://localhost:8080${forgotPass.link}`,
-        html: `<p>Dear ${forgotPass.email}.</p><br />
+    http://${forgotPass.host}{forgotPass.link}`,
+    "Html-part": `<p>Dear ${forgotPass.email}.</p><br />
         <p>As per your request, here is the link you can use to reset your password:<br />
-        http://localhost:8080${forgotPass.link}</p><br /><br />
+        http://${forgotPass.host}${forgotPass.link}</p><br /><br />
         <p>Best regards,</p>
         <p>The CLTeam</p>`
-    };
-    
-    transporter.sendMail(mailOptions, (err, info) => {
-        if (err)
-            return next(err);
-        console.log("Message %s sent: %s", info.messageId, info.response);
+};
+
+let request = Mailjet.post('send').request(options)
+    .then((data) => {
+        console.log(data);
+    })
+    .catch((data) => {
+        console.log(data);
     });
 }
 
@@ -167,6 +167,8 @@ router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => 
 });
 
 router.get('/forgot-password', (req, res, next) => {
+    console.log(req.url);
+    console.log(req.get('host'));
     return res.render('accounts/forgot-password', { message: req.flash('errorMessage'), status: false });
 });
 
@@ -185,7 +187,8 @@ router.post('/forgot-password', (req, res, next) => {
         }
         let hash = user.forgotPassword;
         let link = '/forgot-password/' + hash;
-        sendForgotPassword({ email: user.email, link }, next);
+        let host = req.get('host');
+        sendForgotPassword({ email: user.email, link, host }, next);
         return res.render('accounts/forgot-password', { message: req.flash('errorMessage'), status: true });
     });
 });
