@@ -93,7 +93,7 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                     }
                     let location = "chittoor";
                     let description = "Checkout";
-                    let bill_picture = 'https://storage.googleapis.com/' + config.buckets.checkout + '/' + req.file.filename;
+                    let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
                     var checkout = new Checkout({
                         bill_id: req.file.filename,
                         title,
@@ -111,7 +111,7 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                             if (err)
                                 return next(err);
                             setTimeout(function() {
-                                return res.redirect('/checkout/' + checkout._id);
+                                return res.redirect(path.join('/checkout', checkout._id));
                             }, 110);
                         });
                     });
@@ -174,7 +174,7 @@ router.post('/checkout-edit/:id', (req, res, next) => {
             if (req.body.date_time) {
                 if (!moment(req.body.date_time).isValid){
                     req.flash('errorCheckout', 'Not a Valid date format');
-                    return res.redirect('/checkout-edit/' + checkout._id);
+                    return res.redirect(path.join('/checkout-edit', checkout._id));
                 }
                 checkout.date = req.body.date_time;
             }
@@ -195,7 +195,7 @@ router.post('/checkout-edit/:id', (req, res, next) => {
                 if (err) return next(err);
 
                 req.flash('success', 'Successfully edited your checkout');
-                return res.redirect('/checkout/' + checkout._id);
+                return res.redirect(path.join('/checkout', checkout._id));
             });
         });
 });
