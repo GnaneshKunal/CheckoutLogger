@@ -10,6 +10,8 @@ const cookieParser = require('cookie-parser');
 const flash = require('express-flash');
 const MongoStore = require('connect-mongo')(session);
 const passport = require('passport');
+const path = require('path');
+const favicon = require('serve-favicon');
 const config = require('./config');
 
 //models
@@ -27,7 +29,8 @@ mongoose.connect(config.databaseUrl, (err) => {
 });
 
 //Middlewares
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(morgan('tiny'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
