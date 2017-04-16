@@ -183,7 +183,7 @@ router.post('/forgot-password', (req, res, next) => {
             return res.redirect('/forgot-password');
         }
         let hash = user.forgotPassword;
-        let link = path.join('/forgot-password', hash);
+        let link = '/forgot-password/' + hash;
         let host = req.get('host');
         let protocol = req.protocol;
         sendForgotPassword({ email: user.email, link, host, protocol }, next);
@@ -217,11 +217,11 @@ router.post('/forgot-password/:id', (req, res, next) => {
         let pass2 = req.body.password2;
         if (!pass1 || !pass2){
             req.flash('errorMessage', 'Please enter passwords.');
-            return res.redirect(path.join('/forgot-password', hash));
+            return res.redirect('/forgot-password/' + hash);
         }
         if (pass1 !== pass2) {
             req.flash('errorMessage', "Password's doesn't match.");
-            return res.redirect(path.join('/forgot-password', hash));
+            return res.redirect('/forgot-password/' + hash);
         }
         user.forgotPassword = crypto.createHash('sha256', config.secret)
                                 .update(user.email + new Date().getTime())
