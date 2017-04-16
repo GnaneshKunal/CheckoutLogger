@@ -23,6 +23,26 @@ var checkoutBucket = storage.bucket(config.buckets.checkout);
 function paginate(req, res, next) {
     let perPage = 5;
     let page = req.params.page - 1;
+    let search = false;
+    if (req.query.search !== undefined) {
+        search = req.query.search.trim();
+        Checkout.find({ title: new RegExp(search, 'i')})
+            .where('bill_owner').equals(req.user._id)
+            .sort({ date: 'desc' })
+            .skip(perPage * page)
+            .limit(perPage)
+            .populate('bill_owner', 'profile.name')
+            .exec((err, checkouts) => {
+                if (err) return next(err);
+                Checkout.find({ title: new RegExp(search, 'i')}).where('bill_owner').equals(req.user._id).count().exec((err, count) => {
+                    if (err) return next(err);
+                    if (!checkouts)
+                        return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success'), search });
+                    return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success'), search });
+                });
+            });
+            return;
+    }
     Checkout.find({ bill_owner: req.user._id })
         .sort({ date: 'desc' })
         .skip(perPage * page)
@@ -30,12 +50,12 @@ function paginate(req, res, next) {
         .populate('bill_owner', 'profile.name')
         .exec((err, checkouts) => {
             if (err) return next(err);
-            Checkout.count().exec((err, count) => {
+            Checkout.find({ bill_owner: req.user._id }).count().exec((err, count) => {
                 if (err) return next(err);
                 if (!checkouts)
-                    return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success') });
-                return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success') });
-            });
+                    return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success'), search });
+                return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success'), search });
+            });      
     });
 }
 
@@ -111,7 +131,7 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                             if (err)
                                 return next(err);
                             setTimeout(function() {
-                                return res.redirect(path.join('/checkout', checkout._id));
+                                return res.redirect('/checkout/' + checkout._id);
                             }, 110);
                         });
                     });
@@ -174,7 +194,7 @@ router.post('/checkout-edit/:id', (req, res, next) => {
             if (req.body.date_time) {
                 if (!moment(req.body.date_time).isValid){
                     req.flash('errorCheckout', 'Not a Valid date format');
-                    return res.redirect(path.join('/checkout-edit', checkout._id));
+                    return res.redirect('/checkout-edit/' + checkout._id);
                 }
                 checkout.date = req.body.date_time;
             }
@@ -195,7 +215,7 @@ router.post('/checkout-edit/:id', (req, res, next) => {
                 if (err) return next(err);
 
                 req.flash('success', 'Successfully edited your checkout');
-                return res.redirect(path.join('/checkout', checkout._id));
+                return res.redirect('/checkout/' + checkout._id);
             });
         });
 });
