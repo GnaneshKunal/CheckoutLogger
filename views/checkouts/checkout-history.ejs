@@ -9,26 +9,70 @@
             </div>
             </div>
 <% } %>
-<% if (checkouts.length === 0) { %>
+<% if (checkouts.length === 0 && search === false) { %>
     <div class="row">
         <p>You don&#39;t have any checkouts yet</p>
     </div>
-<% } else { %>
+<% } else if (checkouts.length === 0 && search === true) { %>
+    <form method="get" action="/checkout-history">
+        <div class="row">
+            <div class="col-sm-6">
+                <div class="input-group">
+                <input type="text" name="search" class="form-control" placeholder="Search for...">
+                <span class="input-group-btn">
+                    <button class="btn btn-secondary" type="submit">Go!</button>
+                </span>
+                </div>
+            </div>
+        </div>
+    </form>
+    <br />
+    <div class="row">
+        <p style="padding-left:50px;">You don&#39;t have any checkouts with that title.</p>
+    </div>
+<% } else if (checkouts.length > 0) { %>
+<form method="get" action="/checkout-history">
+<div class="row">
+    <div class="col-sm-6">
+        <div class="input-group">
+        <input type="text" name="search" class="form-control" placeholder="Search for...">
+        <span class="input-group-btn">
+            <button class="btn btn-secondary" type="submit">Go!</button>
+        </span>
+        </div>
+    </div>
+</div>
+</form>
+<br />
 <div class="list-group">
     <% for(var i = 0; i < checkouts.length; i++) {%>
         <a href="/checkout/<%= checkouts[i]._id %>" id="<%= checkouts[i]._id %>" class="list-group-item list-group-item-action flex-column align-items-start">
             <div class="d-flex w-100 justify-content-between">
             <h5 class="mb-1 capitalize"><%= checkouts[i].title %></h5>
-            <small><%= checkouts[i].date %></small>
+            <small><%= checkouts[i].date.toDateString() %></small>
             </div>
-            <p class="mb-1"><%= checkouts[i].bill_id %></p>
-            <small>$<%= checkouts[i].total %></small>
+            <p class="mb-1">$<%= checkouts[i].total %></p>
+            <small><%= checkouts[i].location %></small>
         </a>
     <% } %>
 </div>
+<% } %>
+<% if (search) { %>
+    <nav aria-label="Page navigation example">
+  <ul class="pagination justify-content-center">
+    <% for(var i = 1; i < pages+1; i++) {%>
+            <% if (i === 1) {%>
+    <li class="page-item"><a class="page-link" href="/checkout-history?search=<%= search %>"><%= i %></a></li>
+            <% } else { %>
+    <li class="page-item"><a class="page-link" href="/checkout-history/<%= i %>?search=<%= search %>"><% search %><%= i %></a></li>
+            <% } %>
+    <% } %>
+  </ul>
+</nav>
+<% } else { %>
 <nav aria-label="Page navigation example">
   <ul class="pagination justify-content-center">
-    <% for(var i = 1; i <= pages+1; i++) {%>
+    <% for(var i = 1; i < pages+1; i++) {%>
             <% if (i === 1) {%>
     <li class="page-item"><a class="page-link" href="/checkout-history"><%= i %></a></li>
             <% } else { %>
