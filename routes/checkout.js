@@ -111,7 +111,7 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                         req.flash('errorPicture', "Sorry, There's some error in decoding the text. Try to upload a clear Image");
                         return res.redirect('/checkout-new');
                     }
-                    let location = "chittoor";
+                    let location = "Cant Parse Location";
                     let description = "Checkout";
                     let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
                     var checkout = new Checkout({
