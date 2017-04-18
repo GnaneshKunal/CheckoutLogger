@@ -24,11 +24,15 @@ function paginate(req, res, next) {
     let perPage = 5;
     let page = req.params.page - 1;
     let search = false;
+    let sort = -1;
+    if (req.query.sort) {
+        sort = req.query.sort === 'asc' ? 1 : -1;
+    }
     if (req.query.search !== undefined) {
         search = req.query.search.trim();
         Checkout.find({ title: new RegExp(search, 'i')})
             .where('bill_owner').equals(req.user._id)
-            .sort({ date: 'desc' })
+            .sort({ date: sort })
             .skip(perPage * page)
             .limit(perPage)
             .populate('bill_owner', 'profile.name')
@@ -37,8 +41,8 @@ function paginate(req, res, next) {
                 Checkout.find({ title: new RegExp(search, 'i')}).where('bill_owner').equals(req.user._id).count().exec((err, count) => {
                     if (err) return next(err);
                     if (!checkouts)
-                        return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success'), search });
-                    return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success'), search });
+                        return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success'), search, sort });
+                    return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success'), search, sort });
                 });
             });
             return;
@@ -53,8 +57,8 @@ function paginate(req, res, next) {
             Checkout.find({ bill_owner: req.user._id }).count().exec((err, count) => {
                 if (err) return next(err);
                 if (!checkouts)
-                    return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success'), search });
-                return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success'), search });
+                    return res.render('checkouts/checkout-history', { checkouts: [], pages: count / perPage, success: req.flash('success'), search, sort });
+                return res.render('checkouts/checkout-history', { checkouts, pages: count / perPage, success: req.flash('success'), search, sort });
             });      
     });
 }

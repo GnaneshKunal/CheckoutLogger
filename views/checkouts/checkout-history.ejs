@@ -16,6 +16,12 @@
 <% } else if (checkouts.length === 0 && search === true) { %>
     <form method="get" action="/checkout-history">
         <div class="row">
+        <div class="col-sm-6">
+            <select name="sort" id="myselect" onchange="this.form.submit()">
+            <option value="asc" <%= sort === 1 ? 'selected' : '' %> >One</option>
+            <option value="dsc" <%= sort === -1 ? 'selected' : '' %> >Two</option>
+        </select>
+    </div>
             <div class="col-sm-6">
                 <div class="input-group">
                 <input type="text" name="search" class="form-control" placeholder="Search for...">
@@ -33,6 +39,12 @@
 <% } else if (checkouts.length > 0) { %>
 <form method="get" action="/checkout-history">
 <div class="row">
+<div class="col-sm-6">
+            <select name="sort" id="myselect" onchange="this.form.submit()">
+            <option value="asc" <%= sort === 1 ? 'selected' : '' %> >ASC</option>
+            <option value="dsc" <%= sort === -1 ? 'selected' : '' %> >DSC</option>
+        </select>
+    </div>
     <div class="col-sm-6">
         <div class="input-group">
         <input type="text" name="search" class="form-control" placeholder="Search for...">
