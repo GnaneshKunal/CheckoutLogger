@@ -48,7 +48,7 @@ function paginate(req, res, next) {
             return;
     }
     Checkout.find({ bill_owner: req.user._id })
-        .sort({ date: 'desc' })
+        .sort({ date: sort })
         .skip(perPage * page)
         .limit(perPage)
         .populate('bill_owner', 'profile.name')
