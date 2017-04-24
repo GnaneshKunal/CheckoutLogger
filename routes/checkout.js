@@ -102,12 +102,12 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
         let extensions = ['.png', '.jpg'];
         if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
             vision.detectText(req.file.path, (err, textD) => {
-                if (textD !== null || textD.length !== 0 || textD !== undefined) {
+                if (textD !== undefined && textD.length > 0) {
                     let detectedText = textD[0];
-                    let textArray = detectedText.split('\n');
-                    let title = textArray[0];
-                    let total, total_tax, date;
+                    let total, total_tax, date, title, textArray;
                     try {
+                        textArray = detectedText.split('\n');
+                        title = textArray[0];
                         total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
                         total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
                         date = parser.parseDate(textArray);
