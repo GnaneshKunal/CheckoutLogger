@@ -102,7 +102,7 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
         let extensions = ['.png', '.jpg'];
         if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
             vision.detectText(req.file.path, (err, textD) => {
-                if (textD !== undefined && textD.length > 0) {
+                if (textD !== undefined && textD !== null ) {
                     let detectedText = textD[0];
                     let total, total_tax, date, title, textArray;
                     try {
