@@ -4,46 +4,40 @@ const fs = require('fs');
 const path = require('path');
 const passport = require('passport');
 const crypto = require('crypto');
-const gcloud = require('google-cloud');
+const nodemailer = require('nodemailer');
 const config = require('../config');
 const passportConfig = require('../services/passport');
 const User = require('../models/user');
 var upload = multer({ dest: '/tmp/'});
-var storage = gcloud.storage({
-    projectId: config.gcloud.projectId,
-    keyFilename: config.gcloud.keyFileName
-});
-const Mailjet = require('node-mailjet').connect(
-    config.mailjet.apiKey,
-    config.mailjet.apiSecret
-);
-
-var userImages = storage.bucket(config.buckets.user);
 
 function sendForgotPassword(forgotPass, next) {
-    let options = {
-    FromEmail: config.mailjet.sender,
-    FromName: "Checkout Logger Name",
-    Recipients: [ { Email: forgotPass.email }],
-    Subject: "CheckoutLogger - forgot password",
-    "Text-part": `Dear ${forgotPass.email},
+    let transporter = nodemailer.createTransport({
+        service: config.smtp.service,
+        auth: {
+            user: config.smtp.email,
+            pass: config.smtp.password
+        }
+    });
+
+    let mailOptions = {
+        from: `"${config.smtp.name + config.smtp.last}" <${config.smtp.email}>`,
+        to: forgotPass.email,
+        subject: 'CheckoutLogger - forgot password',
+        text: `Dear ${forgotPass.email},
         
-As per your request, here is the link you can use to reset your password:
+        As per your request, here is the link you can use to reset your password:
+            http://localhost:8080${forgotPass.link}`,
+                html: `<p>Dear ${forgotPass.email}.</p><br />
+                <p>As per your request, here is the link you can use to reset your password:<br />
+                http://localhost:8080${forgotPass.link}</p><br /><br />
+                <p>Best regards,</p>
+                <p>The CLTeam</p>`
+    };
 
-    ${forgotPass.protocol}://${forgotPass.host}${forgotPass.link}`,
-    "Html-part": `<p>Dear ${forgotPass.email}.</p><br />
-        <p>As per your request, here is the link you can use to reset your password:<br />
-        <a href="${forgotPass.protocol}://${forgotPass.host}${forgotPass.link}">here</a></p><br /><br />
-        <p>Best regards,</p>
-        <p>The CLTeam</p>`
-};
-
-let request = Mailjet.post('send').request(options)
-    .then((data) => {
-        console.log(data);
-    })
-    .catch((data) => {
-        next(data);
+    transporter.sendMail(mailOptions, (err, info) => {
+        if (err)
+            return next(err);
+        console.log("Message %s send: %s", info.messageId, info.response);
     });
 }
 
@@ -132,22 +126,18 @@ router.post('/edit-profile', upload.single('profilePhoto'), (req, res, next) => 
         if (req.file) {
             var extensions = ['.png', '.jpg', '.gif'];
             if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
-                var oldFile = userImages.file(path.basename(user.profile.picture));
-                if (oldFile.exists((err, exists) => {
-                    if (err)
-                        return next(err);
-                    if (exists) {
-                        oldFile.delete((err, deleted) => {
-                            if (err)
-                                return next(err);
-                        });
-                    }
-                }));
-                userImages.upload(req.file.path, (err, file) => {
-                    if (err)
-                        return next(err);
+                var file = path.dirname(__dirname) + '/public/uploads/pictures/' + req.file.filename;
+                if (fs.existsSync(path.join(path.dirname(__dirname), 'public', user.profile.picture))) {
+                    fs.unlinkSync(path.join(path.dirname(__dirname), 'public', user.profile.picture))
+                }
+                let is = fs.createReadStream(req.file.path);
+                let ds = fs.createWriteStream(file);
+                is.pipe(ds);
+                is.on('end', () => {
+                    fs.unlinkSync(req.file.path);
                 });
-                user.profile.picture = path.join('https://storage.googleapis.com/', config.buckets.user,req.file.filename)
+                user.profile.picture = '/uploads/pictures/' + path.basename(file);
+                
             } else {
                 req.flash('errorPicture', 'Sorry we accept only png, jpg and gif formats');
                 return res.redirect('/edit-profile');
@@ -171,7 +161,7 @@ router.get('/forgot-password', (req, res, next) => {
 
 router.post('/forgot-password', (req, res, next) => {
     let email = req.body.email;
-    if (!email){
+    if (!email) {
         req.flash('errorMessage', 'Please enter an email address.');
         return res.redirect('/forgot-password');
     }
@@ -184,9 +174,7 @@ router.post('/forgot-password', (req, res, next) => {
         }
         let hash = user.forgotPassword;
         let link = '/forgot-password/' + hash;
-        let host = req.get('host');
-        let protocol = req.protocol;
-        sendForgotPassword({ email: user.email, link, host, protocol }, next);
+        sendForgotPassword({ email: user.email, link }, next);
         return res.render('accounts/forgot-password', { message: req.flash('errorMessage'), status: true });
     });
 });
