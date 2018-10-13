@@ -74,6 +74,140 @@ router.get('/checkout', (req, res, next) => {
     });
 });
 
+
+router.post('/api/checkout-new', upload.single('checkout'), (req, res, next) => {
+
+    // console.log(req);
+    console.log(req.body);
+    
+    console.log(req.params);
+    console.log(req.query);
+    console.log(req.file);
+
+    if (req.file) {
+	let extensions = ['.png', '.jpg'];
+	if (extensions.indexOf(path.extname(req.file.originalname)) != -1) {
+	    visiion.detectText(req.file.path, (err, textID) => {
+		if (textD !== undefined && textD !== null) {
+		    let detectedText = textD[0];
+		    let total, total_tax, date, title, textArray;
+		    try {
+			textArray = detectedText.split('\n');
+			title = textArray[0];
+			total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
+			total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
+			date = parser.parseDate(textArray);
+		    } catch(e) {
+			return res.status(400).send({
+			    message: "Sorry, There's some error in decoding the text. Try to upload a clear Image"
+			});
+		    }
+		    let location = "Cant Parse Location";
+                    let description = "Checkout";
+                    let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
+                    var checkout = new Checkout({
+                        bill_id: req.file.filename,
+                        title,
+                        description,
+                        date,
+                        location,
+                        total_tax,
+                        total,
+                        bill_picture,
+                        bill_owner: '123456'
+                    });
+                    checkout.save((err) => {
+			if (err)
+			    return res.status(400).send({
+				message: JSON.stringify(err)
+			    });
+                        // if (err) return next(err);
+                        checkoutBucket.upload(req.file.path, (err, uploaded) => {
+                            if (err)
+                                return next(err);
+                            setTimeout(function() {
+				return res.status(200).send({
+				    message: 'Uploaded'
+				});
+                                // return res.redirect('/checkout/' + checkout._id);
+                            }, 110);
+                        });
+                    });
+		} else {
+		    return res.status(400).send({
+			message: 'Sorry we accept only checkout images.'
+		    });
+		}
+	    });
+	} else {
+	    return res.status(400).send({
+		message: 'Sorry we accept only checkout images.'
+	    });
+	}
+    } else {
+	return res.status(400).send({
+	    message: 'Please upload an image'
+	});
+    }
+});
+
+router.get('/api/checkout-all', (req, res, next) => {
+    Checkout.find({ bill_owner: '123456' })
+	.sort({ date: sort })
+	.exec((err, checkouts) => {
+	    if (err)
+		return res.status(400)
+		.send({
+		    message: JSON.stringify(err)
+		});
+	    if (!checkouts)
+		return res.status(404).send({
+		    message: 'No checkouts found'
+		});
+	    return res.status(200).send({
+		message: 'Found Checkouts',
+		checkouts
+	    });
+	});
+});
+
+router.get('/api/checkout', (req, res, next) => {
+    Checkout.findOne({ bill_owner: '123456' })
+	.sort({ date: -1 }).exec((err, checkout) => {
+	    if (err)
+		return res.status(400).send({
+		    message: JSON.stringify(err)
+		});
+	    if (!checkout) {
+		return res.status(404).send({
+		    message: 'No Checkout found'
+		});
+	    }
+	    return res.status(200).send({
+		message: 'Found Checkout',
+		checkout
+	    });
+	});
+});
+
+router.get('/api/checkout/:_id', (req, res, next) => {
+    let _id = req.params._id;
+    Checkout.findOne({ _id }, (err, checkout) => {
+	if (err)
+	    return res.status(400).send({
+		message: JSON.stringify(err)
+	    });
+	if (!checkout)
+	    return res.status(404).send({
+		message: 'Checkout Not found'
+	    });
+	return res.status(200).send({
+	    message: 'Checkout',
+	    checkout
+	});
+    });
+});
+
 router.get('/checkout/:_id', (req, res, next) => {
     let _id = req.params._id
     if (!mongoose.Types.ObjectId.isValid(_id)) {
