@@ -69,6 +69,24 @@ router.get('/profile', (req, res, next) => {
     });
 });
 
+// router.get('/api/profile', (req, res, next) => {
+//     const _id = req.body._id;
+//     if (_id)
+// 	return res.status(400).send({
+// 	    message: 'Please send an ID'
+// 	});
+//     User.findOne({ _id }, function(err, user) {
+// 	if (err) return res.status(400).send({
+// 	    message: JSON.stringify(err)
+// 	});
+// 	return res.status(200).send({
+// 	    message: 'Profile',
+// 	    user
+// 	});
+//     });
+// });
+
+
 router.get('/signup', (req, res, next) => {
     if(req.user) return res.redirect('/');
     res.render('accounts/signup', {
@@ -236,4 +254,80 @@ router.post('/forgot-password/:id', (req, res, next) => {
     });
 });
 
+
+router.post('/api/signup', (req, res, next) => {
+    const email = req.body.email.toLowerCase();
+    const name = req.body.name;
+    const password = req.body.password;
+    if (!email || !name ||!password) {
+	return res.status(400).send({
+	    message: 'Please fill up the form'
+	});
+    }
+    const user = new User({
+	email,
+	password,
+	profile: {
+	    name
+	}
+    });
+    user.forgotPassword = crypto.createHash('sha256', config.secret)
+	.update(req.body.email + new Date().getTime())
+	.digest('hex')
+    user.profile.picture = user.gravatar();
+    User.findOne({ email: email }, function(err, existingUser) {
+	if (existingUser) {
+	    return res.status(400).send({
+		message: 'Account with that email address already exists'
+	    });
+	} else {
+	    user.save((err, user) => {
+		if (err)
+		    return res.status(400).send({
+			message: JSON.stringify(err)
+		    });
+		return res.status(200).send({
+		    message: 'Created Account',
+		    user
+		});
+	    });
+	}
+    });
+});
+
+
+router.post('/api/login', (req, res) => {
+    const email = req.body.email.toLowerCase();
+
+    if (!email) {
+	return res.status(400).send({
+	    message: 'Email required'
+	});
+    }
+    
+    User.findOne({ email: email.toLowerCase() }, function(err, user) {
+        if (err) return res.status(400).send({
+	    messag: JSON.stringify(err)
+	});
+
+        if (!user) {
+	    return res.status(400).send({
+		message: 'No user has been found'
+	    });
+        }
+
+        if (!user.comparePassword(password)) {
+	    return res.status(400).send({
+		message: 'Oops! Worng Password.'
+	    });
+        }
+        return res.status(200).send({
+	    message: 'Success',
+	    user
+	});
+    });
+
+});
+
 module.exports = router;
+
