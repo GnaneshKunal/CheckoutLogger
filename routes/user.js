@@ -4,12 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const passport = require('passport');
 const crypto = require('crypto');
-const gcloud = require('google-cloud');
+const {Storage} = require('@google-cloud/storage');
 const config = require('../config');
 const passportConfig = require('../services/passport');
 const User = require('../models/user');
 var upload = multer({ dest: '/tmp/'});
-var storage = gcloud.storage({
+var storage = new Storage({
     projectId: config.gcloud.projectId,
     keyFilename: config.gcloud.keyFileName
 });

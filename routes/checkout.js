@@ -5,19 +5,21 @@ const multer = require('multer');
 const path = require('path');
 const moment = require('moment');
 const request = require('request');
-const gcloud = require('google-cloud');
+const {Storage} = require('@google-cloud/storage');
+const Vision = require('@google-cloud/vision')
 const Checkout = require('../models/checkout');
 const config = require('../config');
 const parser = require('../lib/parser');
 let upload = multer({dest: '/tmp/' });
-var storage = gcloud.storage({
+var storage = new Storage({
     projectId: config.gcloud.projectId,
     keyFilename: config.gcloud.keyFileName
 });
-var vision = gcloud.vision({
-    projectId: config.gcloud.projectId,
-    keyFilename: config.gcloud.keyFileName
-});
+var vision = new Vision.ImageAnnotatorClient();
+// var vision = gcloud.vision({
+//     projectId: config.gcloud.projectId,
+//     keyFilename: config.gcloud.keyFileName
+// });
 var checkoutBucket = storage.bucket(config.buckets.checkout);
 
 function paginate(req, res, next) {
@@ -87,58 +89,120 @@ router.post('/api/checkout-new', upload.single('checkout'), (req, res, next) => 
     if (req.file) {
 	let extensions = ['.png', '.jpg'];
 	if (extensions.indexOf(path.extname(req.file.originalname)) != -1) {
-	    visiion.detectText(req.file.path, (err, textID) => {
-		if (textD !== undefined && textD !== null) {
-		    let detectedText = textD[0];
-		    let total, total_tax, date, title, textArray;
-		    try {
-			textArray = detectedText.split('\n');
-			title = textArray[0];
-			total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
-			total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
-			date = parser.parseDate(textArray);
-		    } catch(e) {
-			return res.status(400).send({
-			    message: "Sorry, There's some error in decoding the text. Try to upload a clear Image"
-			});
-		    }
-		    let location = "Cant Parse Location";
-                    let description = "Checkout";
-                    let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
-                    var checkout = new Checkout({
-                        bill_id: req.file.filename,
-                        title,
-                        description,
-                        date,
-                        location,
-                        total_tax,
-                        total,
-                        bill_picture,
-                        bill_owner: '123456'
-                    });
-                    checkout.save((err) => {
-			if (err)
+	    // visiion.detectText(req.file.path, (err, textID) => {
+	    // 	if (textD !== undefined && textD !== null) {
+	    // 	    console.log(textD);
+	    // 	    let detectedText = textD[0];
+	    // 	    console.log("THIS IS DETECTED", detectedText);
+	    // 	    let total, total_tax, date, title, textArray;
+	    // 	    try {
+	    // 		textArray = detectedText.split('\n');
+	    // 		title = textArray[0];
+	    // 		total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
+	    // 		total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
+	    // 		date = parser.parseDate(textArray);
+	    // 	    } catch(e) {
+	    // 		console.log(e)
+	    // 		return res.status(400).send({
+	    // 		    message: "Sorry, There's some error in decoding the text. Try to upload a clear Image"
+	    // 		});
+	    // 	    }
+	    // 	    let location = "Cant Parse Location";
+            //         let description = "Checkout";
+            //         let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
+            //         var checkout = new Checkout({
+            //             bill_id: req.file.filename,
+            //             title,
+            //             description,
+            //             date,
+            //             location,
+            //             total_tax,
+            //             total,
+            //             bill_picture,
+            //             bill_owner: '123456'
+            //         });
+            //         checkout.save((err) => {
+	    // 		if (err)
+	    // 		    return res.status(400).send({
+	    // 			message: JSON.stringify(err)
+	    // 		    });
+            //             // if (err) return next(err);
+            //             checkoutBucket.upload(req.file.path, (err, uploaded) => {
+            //                 if (err)
+            //                     return next(err);
+            //                 setTimeout(function() {
+	    // 			return res.status(200).send({
+	    // 			    message: 'Uploaded'
+	    // 			});
+            //                     // return res.redirect('/checkout/' + checkout._id);
+            //                 }, 110);
+            //             });
+            //         });
+	    // 	} else {
+	    // 	    return res.status(400).send({
+	    // 		message: 'Sorry we accept only checkout images.'
+	    // 	    });
+	    // 	}
+	    // });
+	    vision.documentTextDetection(req.file.path)
+		.then(textD => {
+		    if (textD !== undefined && textD !== null ) {
+			// console.log(textD);
+			let detectedText = textD[0];
+			// console.log("THIS IS DETECTED", detectedText);
+			// // let detectedText = textD[0];
+			let total, total_tax, date, title, textArray;
+			try {
+                            textArray = detectedText.fullTextAnnotation.text.split('\n');
+                            title = textArray[0];
+                            total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
+                            total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
+                            date = parser.parseDate(textArray);
+			} catch(e) {
 			    return res.status(400).send({
-				message: JSON.stringify(err)
-			    });
-                        // if (err) return next(err);
-                        checkoutBucket.upload(req.file.path, (err, uploaded) => {
-                            if (err)
-                                return next(err);
-                            setTimeout(function() {
-				return res.status(200).send({
-				    message: 'Uploaded'
-				});
-                                // return res.redirect('/checkout/' + checkout._id);
-                            }, 110);
-                        });
-                    });
-		} else {
+	    			message: "Sorry, There's some error in decoding the text. Try to upload a clear Image"
+	    		    });
+			}
+			let location = "Cant Parse Location";
+			let description = "Checkout";
+			let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
+			var checkout = new Checkout({
+                            bill_id: req.file.filename,
+                            title,
+                            description,
+                            date,
+                            location,
+                            total_tax,
+                            total,
+                            bill_picture,
+                            bill_owner: '123456'
+			});
+			checkout.save((err) => {
+                            if (err) return next(err);
+                            checkoutBucket.upload(req.file.path, (err, uploaded) => {
+				if (err) {
+				    return res.status(400).send({
+	     		            	message: JSON.stringify(err)
+	      			    });
+				}
+				setTimeout(function() {
+				    return res.status(200).send({
+	    				message: 'Uploaded'
+	    			    });
+				}, 110);
+                            });
+			});
+                    } else {
+			return res.status(400).send({
+	    		    message: 'Sorry we accept only checkout images.'
+	    		});
+                    }
+		})
+		.catch(err => {
 		    return res.status(400).send({
-			message: 'Sorry we accept only checkout images.'
-		    });
-		}
-	    });
+	    		message: 'Sorry we accept only checkout images.'
+	    	    });
+		});
 	} else {
 	    return res.status(400).send({
 		message: 'Sorry we accept only checkout images.'
@@ -171,7 +235,7 @@ router.get('/api/checkout-all', (req, res, next) => {
 	});
 });
 
-router.get('/api/checkout', (req, res, next) => {
+router.get('/api/checkout/:_id', (req, res, next) => {
     Checkout.findOne({ bill_owner: '123456' })
 	.sort({ date: -1 }).exec((err, checkout) => {
 	    if (err)
@@ -235,49 +299,101 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
     if (req.file) {
         let extensions = ['.png', '.jpg'];
         if (extensions.indexOf(path.extname(req.file.originalname)) !== -1) {
-            vision.detectText(req.file.path, (err, textD) => {
-                if (textD !== undefined && textD !== null ) {
-                    let detectedText = textD[0];
-                    let total, total_tax, date, title, textArray;
-                    try {
-                        textArray = detectedText.split('\n');
-                        title = textArray[0];
-                        total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
-                        total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
-                        date = parser.parseDate(textArray);
-                    } catch(e) {
-                        req.flash('errorPicture', "Sorry, There's some error in decoding the text. Try to upload a clear Image");
-                        return res.redirect('/checkout-new');
+	    vision.documentTextDetection(req.file.path)
+		.then(textD => {
+		    if (textD !== undefined && textD !== null ) {
+			// console.log(textD);
+			let detectedText = textD[0];
+			console.log("THIS IS DETECTED", detectedText);
+			// // let detectedText = textD[0];
+			let total, total_tax, date, title, textArray;
+			try {
+                            textArray = detectedText.fullTextAnnotation.text.split('\n');
+                            title = textArray[0];
+                            total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
+                            total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
+                            date = parser.parseDate(textArray);
+			} catch(e) {
+			    console.log(e);
+                            req.flash('errorPicture', "Sorry, There's some error in decoding the text. Try to upload a clear Image");
+                            return res.redirect('/checkout-new');
+			}
+			let location = "Cant Parse Location";
+			let description = "Checkout";
+			let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
+			var checkout = new Checkout({
+                            bill_id: req.file.filename,
+                            title,
+                            description,
+                            date,
+                            location,
+                            total_tax,
+                            total,
+                            bill_picture,
+                            bill_owner: req.user._id
+			});
+			checkout.save((err) => {
+                            if (err) return next(err);
+                            checkoutBucket.upload(req.file.path, (err, uploaded) => {
+				if (err)
+                                    return next(err);
+				setTimeout(function() {
+                                    return res.redirect('/checkout/' + checkout._id);
+				}, 110);
+                            });
+			});
+                    } else {
+			req.flash('errorPicture', 'Sorry we accept only checkout images.');
+			return res.redirect('/checkout-new');
                     }
-                    let location = "Cant Parse Location";
-                    let description = "Checkout";
-                    let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
-                    var checkout = new Checkout({
-                        bill_id: req.file.filename,
-                        title,
-                        description,
-                        date,
-                        location,
-                        total_tax,
-                        total,
-                        bill_picture,
-                        bill_owner: req.user._id
-                    });
-                    checkout.save((err) => {
-                        if (err) return next(err);
-                        checkoutBucket.upload(req.file.path, (err, uploaded) => {
-                            if (err)
-                                return next(err);
-                            setTimeout(function() {
-                                return res.redirect('/checkout/' + checkout._id);
-                            }, 110);
-                        });
-                    });
-                } else {
-                    req.flash('errorPicture', 'Sorry we accept only checkout images.');
+		})
+		.catch(err => {
+		    req.flash('errorPicture', 'Sorry we accept only checkout images.');
                     return res.redirect('/checkout-new');
-                }
-            });
+		});
+            // vision.detectText(req.file.path, (err, textD) => {
+                // if (textD !== undefined && textD !== null ) {
+                //     let detectedText = textD[0];
+                //     let total, total_tax, date, title, textArray;
+                //     try {
+                //         textArray = detectedText.split('\n');
+                //         title = textArray[0];
+                //         total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
+                //         total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
+                //         date = parser.parseDate(textArray);
+                //     } catch(e) {
+                //         req.flash('errorPicture', "Sorry, There's some error in decoding the text. Try to upload a clear Image");
+                //         return res.redirect('/checkout-new');
+                //     }
+                //     let location = "Cant Parse Location";
+                //     let description = "Checkout";
+                //     let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
+                //     var checkout = new Checkout({
+                //         bill_id: req.file.filename,
+                //         title,
+                //         description,
+                //         date,
+                //         location,
+                //         total_tax,
+                //         total,
+                //         bill_picture,
+                //         bill_owner: req.user._id
+                //     });
+                //     checkout.save((err) => {
+                //         if (err) return next(err);
+                //         checkoutBucket.upload(req.file.path, (err, uploaded) => {
+                //             if (err)
+                //                 return next(err);
+                //             setTimeout(function() {
+                //                 return res.redirect('/checkout/' + checkout._id);
+                //             }, 110);
+                //         });
+                //     });
+                // } else {
+                //     req.flash('errorPicture', 'Sorry we accept only checkout images.');
+                //     return res.redirect('/checkout-new');
+                // }
+            // });
         } else {
                 req.flash('errorPicture', 'Sorry we accept only png and jpg formats');
                 return res.redirect('/checkout-new');
