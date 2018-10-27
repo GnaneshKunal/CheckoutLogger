@@ -398,8 +398,8 @@ router.post('/api/checkout-new', upload.single('checkout'), (req, res, next) => 
 });
 
 router.get('/api/checkout-all', (req, res, next) => {
-
-    const _id = req.params._id;
+    
+    const _id = req.query._id;
 
     if (!_id) {
 	return res.status(400).send({
@@ -428,7 +428,7 @@ router.get('/api/checkout-all', (req, res, next) => {
 
 router.get('/api/checkout/:_id', (req, res, next) => {
 
-    const _id = req.body._id;
+    const _id = req.query._id;
 
     if (!_id) {
 	return res.status(400).send({
@@ -456,7 +456,7 @@ router.get('/api/checkout/:_id', (req, res, next) => {
 
 router.get('/api/checkout/', (req, res, next) => {
     
-    let _id = req.params._id;
+    let _id = req.query._id;
 
     if (!_id) {
 	return res.status(400).send({
