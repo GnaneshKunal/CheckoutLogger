@@ -298,10 +298,17 @@ router.post('/api/signup', (req, res, next) => {
 
 router.post('/api/login', (req, res) => {
     const email = req.body.email.toLowerCase();
+    const password = req.body.password;
 
     if (!email) {
 	return res.status(400).send({
 	    message: 'Email required'
+	});
+    }
+
+    if (!password) {
+	return res.status(400).send({
+	    message: 'Password required'
 	});
     }
     
