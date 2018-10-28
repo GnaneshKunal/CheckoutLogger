@@ -435,7 +435,7 @@ router.get('/api/checkout-all', (req, res, next) => {
 		.send({
 		    message: JSON.stringify(err)
 		});
-	    if (!checkouts)
+	    if (!checkouts || checkouts.length == 0)
 		return res.status(404).send({
 		    message: 'No checkouts found'
 		});
@@ -446,33 +446,33 @@ router.get('/api/checkout-all', (req, res, next) => {
 	});
 });
 
-router.get('/api/checkout/:_id', (req, res, next) => {
+// router.get('/api/checkout/:_id', (req, res, next) => {
 
-    const _id = req.query._id;
+//     const _id = req.query._id;
 
-    if (!_id) {
-	return res.status(400).send({
-	    message: 'Please send an ID'
-	});
-    }
+//     if (!_id) {
+// 	return res.status(400).send({
+// 	    message: 'Please send an ID'
+// 	});
+//     }
     
-    Checkout.findOne({ bill_owner: _id })
-	.sort({ date: -1 }).exec((err, checkout) => {
-	    if (err)
-		return res.status(400).send({
-		    message: JSON.stringify(err)
-		});
-	    if (!checkout) {
-		return res.status(404).send({
-		    message: 'No Checkout found'
-		});
-	    }
-	    return res.status(200).send({
-		message: 'Found Checkout',
-		checkout
-	    });
-	});
-});
+//     Checkout.findOne({ bill_owner: _id })
+// 	.sort({ date: -1 }).exec((err, checkout) => {
+// 	    if (err)
+// 		return res.status(400).send({
+// 		    message: JSON.stringify(err)
+// 		});
+// 	    if (!checkout) {
+// 		return res.status(404).send({
+// 		    message: 'No Checkout found'
+// 		});
+// 	    }
+// 	    return res.status(200).send({
+// 		message: 'Found Checkout',
+// 		checkout
+// 	    });
+// 	});
+// });
 
 router.get('/api/checkout/', (req, res, next) => {
     
@@ -494,8 +494,78 @@ router.get('/api/checkout/', (req, res, next) => {
 		message: 'Checkout Not found'
 	    });
 	return res.status(200).send({
-	    message: 'Checkout',
+	    message: 'Found Checkout',
 	    checkout
 	});
+    });
+});
+
+
+
+router.post('/api/checkout-edit/', (req, res, next) => {
+
+    let _id = req.body._id;
+
+    if (!_id)
+	return res.status(400).send({
+	    message: 'Please send an ID'
+	});
+    
+    if (!mongoose.Types.ObjectId.isValid(_id))
+	return res.status(400).send({
+	    message: 'Please send a valid ID'
+	});
+    
+    Checkout.findById({ _id }, (err, checkout) => {
+        if (err)
+            return res.status(500).send({
+		message: err
+	    });
+	
+        if (!checkout)
+            return res.status(404).send({
+		message: 'No checkout found with the given ID'
+	    });
+
+	
+        if (req.body.title)
+            checkout.title = req.body.title;
+
+	checkout.description = req.body.description ? req.body.description : checkout.description;
+
+	if (req.body.date_time) {
+            if (!moment(req.body.date_time).isValid){
+		return res.status(400).send({
+		    message: 'Please enter a valid time'
+		});
+            }
+            checkout.date = req.body.date_time;
+        }
+        if (req.body.tax) {
+            let tax = Number.parseFloat(req.body.tax);
+            if (!Number.isNaN(tax) && tax > 0)
+                checkout.total_tax = tax;
+        }
+        if (req.body.total) {
+            let total = Number.parseFloat(req.body.total);
+            if (!Number.isNaN(total) && total > 0)
+                checkout.total = total;
+        }
+        if (req.body.location)
+            checkout.location = req.body.location;
+        
+        checkout.save((err) => {
+            if (err) return res.status(500).send({
+		message: err
+	    });
+
+	    return res.status(200).send({
+		message: 'Successfully edited your checkout',
+		checkout
+	    });
+	    
+            // req.flash('success', 'Successfully edited your checkout');
+            // return res.redirect('/checkout/' + checkout._id);
+        });
     });
 });
