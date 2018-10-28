@@ -117,11 +117,19 @@ router.post('/checkout-new', upload.single('checkout'),(req, res, next) => {
                             total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
                             total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
                             date = parser.parseDate(textArray);
+			    try {
+                                date = parser.parseDate(textArray);
+                            } catch(e) {
+                                date = new Date;
+                            }
 			} catch(e) {
 			    console.log(e);
                             req.flash('errorPicture', "Sorry, There's some error in decoding the text. Try to upload a clear Image");
                             return res.redirect('/checkout-new');
 			}
+			if (!date || !moment(date).isValid())
+			    date = new Date;
+			
 			let location = "Cant Parse Location";
 			let description = "Checkout";
 			let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
@@ -339,8 +347,14 @@ router.post('/api/checkout-new', upload.single('checkout'), (req, res, next) => 
                             title = textArray[0];
                             total = parser.parseT(textArray, "TOTAL", "Total", "TOTAL NET");
                             total_tax = parser.parseT(textArray, "TAX", "Tax", "TVA");
-                            date = parser.parseDate(textArray);
-			} catch(e) {
+			    try {
+				date = parser.parseDate(textArray);
+			    } catch(e) {
+				date = new Date;
+			    }
+			    
+			    } catch(e) {
+			    console.log(e);
 			    return res.status(400).send({
 	    			message: "Sorry, There's some error in decoding the text. Try to upload a clear Image"
 	    		    });
@@ -348,6 +362,11 @@ router.post('/api/checkout-new', upload.single('checkout'), (req, res, next) => 
 			let location = "Cant Parse Location";
 			let description = "Checkout";
 			let bill_picture = path.join('https://storage.googleapis.com/', config.buckets.checkout, req.file.filename);
+			if (!date || !moment(date).isValid()) {
+			    //    date = moment(new Date()).format("DD-MM-YYYY");
+			    date = new Date;
+			}
+			
 			var checkout = new Checkout({
                             bill_id: req.file.filename,
                             title,
@@ -361,7 +380,7 @@ router.post('/api/checkout-new', upload.single('checkout'), (req, res, next) => 
 			});
 			checkout.save((err) => {
                             if (err) return next(err);
-                            checkoutBucket.upload(req.file.path, (err, uploaded) => {
+                            checkoutBucket.upload(req.file.path, (err, checkout) => {
 				if (err) {
 				    return res.status(400).send({
 	     		            	message: JSON.stringify(err)
@@ -369,7 +388,8 @@ router.post('/api/checkout-new', upload.single('checkout'), (req, res, next) => 
 				}
 				setTimeout(function() {
 				    return res.status(200).send({
-	    				message: 'Uploaded'
+	    				message: 'Uploaded',
+					checkout
 	    			    });
 				}, 110);
                             });
