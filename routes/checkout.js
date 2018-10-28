@@ -569,3 +569,60 @@ router.post('/api/checkout-edit/', (req, res, next) => {
         });
     });
 });
+
+
+router.get('/api/checkout-delete/',(req, res, next) => {
+
+
+    let _id = req.query._id;
+    let did = req.query.did;
+
+    if (!_id)
+	return res.status(400).send({
+	    message: 'Please send an ID'
+	});
+    if (!did)
+	return res.status(400).send({
+	    message: 'Please send the delete checkout ID'
+	});
+    
+    
+    if (!mongoose.Types.ObjectId.isValid(_id))
+        return res.status(400).send({
+	    message: 'Please send a valid ID'
+	});
+    
+    Checkout.findByIdAndRemove({ did }, (err, checkout) => {
+        if (err)
+            return res.status(500).send({
+		message: err
+	    });
+	
+        if (!checkout)
+            return res.status(404).send({
+		message: 'No Checkout found with the specified ID'
+	    });
+            
+        let file = checkoutBucket.file(path.basename(checkout.bill_picture));
+
+	file.exists((err, exists) => {
+            if (err)
+                return res.status(500).send({
+		    message: err
+		});
+	    
+            if (exists) {
+                file.delete((err, deleted) => {
+                    if (err)
+                        return res.status(500).send({
+			    message: err
+			});
+		    
+                    return res.status(200).send({
+			message: 'Successfully deleted the checkout'
+		    });
+                });
+            }
+        });
+    });
+});
